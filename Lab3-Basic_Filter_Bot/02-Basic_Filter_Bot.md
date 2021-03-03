@@ -215,8 +215,6 @@ Microsoft Bot Framework を使用して作成されたボットは、パブリ�
     using Microsoft.Extensions.Options;
     using Microsoft.Extensions.Logging;
 
-=======
-
     using Microsoft.Bot.Builder.AI.Luis;
     using Microsoft.Bot.Builder.Dialogs;
     using Microsoft.Bot.Builder.Azure.Blobs;
