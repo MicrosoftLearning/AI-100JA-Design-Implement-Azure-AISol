@@ -23,34 +23,27 @@
 1. **Startup.cs** ファイルを開き、次の using ステートメントを追加します。
 
     ```csharp
-    using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
-    using Microsoft.Azure.CognitiveServices.Language.TextAnalytics.Models;
-    using Microsoft.Azure.CognitiveServices.Language.LUIS.Runtime;
+    using Azure.AI.TextAnalytics;
+    using Azure;
     ```
 
 1. 次のコードを **ConfigureServices** メソッドに追加します。
 
     ```csharp
-    services.AddSingleton(sp =>
+    services.AddSingleton<TextAnalyticsClient>(sp =>
     {
-        string cogsBaseUrl = Configuration.GetSection("cogsBaseUrl")?.Value;
+        Uri cogsBaseUrl = new Uri(Configuration.GetSection("cogsBaseUrl")?.Value);
         string cogsKey = Configuration.GetSection("cogsKey")?.Value;
 
-        var credentials = new ApiKeyServiceClientCredentials(cogsKey);
-        TextAnalyticsClient client = new TextAnalyticsClient(credentials)
-        {
-            Endpoint = cogsBaseUrl
-        };
-
-        return client;
+        var credentials = new AzureKeyCredential(cogsKey);
+        return new TextAnalyticsClient(cogsBaseUrl, credentials);
     });
     ```
 
 1. **PictureBot.cs** ファイルを開き、次の using ステートメントを追加します。
 
     ```csharp
-    using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
-    using Microsoft.Azure.CognitiveServices.Language.TextAnalytics.Models;
+    using Azure.AI.TextAnalytics;
     ```
 
 1. 次のクラス変数を追加します。
@@ -62,7 +55,7 @@
 1. コンストラクタを変更して、新しい TextAnalyticsClient を含めます。
 
     ```csharp
-    public PictureBot(PictureBotAccessors accessors, ILoggerFactory loggerFactory, LuisRecognizer recognizer, TextAnalyticsClient analyticsClient)
+    public PictureBot(PictureBotAccessors accessors, LuisRecognizer recognizer, TextAnalyticsClient analyticsClient)
     ```
 
 1. コンストラクター内で、クラス変数を初期化します。
@@ -83,22 +76,61 @@
 1. その後に、次のコード行を追加します
 
     ```csharp
-    //言語を確認する
-    var result = _textAnalyticsClient.DetectLanguage(turnContext.Activity.Text, "us");
-
-    switch (result.DetectedLanguages[0].Name)
+    //Check the language
+    DetectedLanguage detectedLanguage = _textAnalyticsClient.DetectLanguage(turnContext.Activity.Text);
+    switch (detectedLanguage.Name)
     {
         case "English":
             break;
         default:
-            //エラーを発生する
-            await turnContext.SendActivityAsync($"I'm sorry, I can only understand English. [{result.DetectedLanguages[0].Name}]");
-            return;
+            //throw error
+            await turnContext.SendActivityAsync($"I'm sorry, I can only understand English. [{detectedLanguage.Name}]");
             break;
     }
     ```
 
-1. **appsettings.json** ファイルを開き、Cognitive Services の設定が入力されていることを確認します。
+1. `switch`文の後のコードを、`case "English"`に移動します。
+
+1. 最終的に`OnTurnAsync`は次のようになります。
+
+    ```csharp
+    public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        if (turnContext.Activity.Type is "message")
+        {
+            var utterance = turnContext.Activity.Text;
+            var state = await _accessors.PictureState.GetAsync(turnContext,() => new PictureState());
+            state.UtteranceList.Add(utterance);
+            await _accessors.ConversationState.SaveChangesAsync(turnContext);
+
+            //Check the language
+            DetectedLanguage detectedLanguage = _textAnalyticsClient.DetectLanguage(turnContext.Activity.Text);
+            switch (detectedLanguage.Name)
+            {
+                    case "English":
+                        // Establish dialog context from the conversation state.
+                        var dc = await _dialogs.CreateContextAsync(turnContext);
+                        // Continue any current dialog.
+                        var results = await dc.ContinueDialogAsync(cancellationToken);
+
+                        // Every turn sends a response, so if no response was sent,
+                        // then there no dialog is currently active.
+                        if (!turnContext.Responded)
+                        {
+                            // Start the main dialog
+                            await dc.BeginDialogAsync("mainDialog", null, cancellationToken);
+                        }
+                        break;
+                    default:
+                        //throw error
+                        await turnContext.SendActivityAsync($"I'm sorry, I can only understand English. [{detectedLanguage.Name}]");
+                        break;
+            }
+        }
+    }
+    ```
+
+1. **appsettings.json** ファイルを開き、Cognitive Services の設定を入力します。
 
     ```csharp
     "cogsBaseUrl": "",

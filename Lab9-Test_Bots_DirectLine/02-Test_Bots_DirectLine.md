@@ -108,12 +108,12 @@ Microsoft Bot Framework DirectLine ボットは、独自の設計のカスタム
         class Program
         {
             // ************
-            // 次の値を DirectLine の秘密とボット リソース ID の名前に置き換えます。
+            // Replace the following values with your Direct Line secret and the name of your bot name.
             //*************
             private static string directLineSecret = "YourDLSecret";
-            private static string botId = "YourBotServiceName";
+            private static string botName = "YourBotServiceName";
 
-            // これにより、ボット ユーザーに名前が付けられます。
+            // This gives a name to the bot user.
             private static string fromUser = "PictureBotSampleUser";
 
             static void Main(string[] args)
@@ -123,41 +123,41 @@ Microsoft Bot Framework DirectLine ボットは、独自の設計のカスタム
 
 
             /// <summary>
-            // ボットとのユーザーの会話を促進します。
+            /// Drives the user's conversation with the bot.
             /// </summary>
             /// <returns></returns>
             private static async Task StartBotConversation()
             {
-                // 新しい DirectLine クライアントを作成します。
+                // Create a new Direct Line client.
                 DirectLineClient client = new DirectLineClient(directLineSecret);
 
-                // 会話を開始します。
+                // Start the conversation.
                 var conversation = await client.Conversations.StartConversationAsync();
 
-                // ボット メッセージ リーダーを別のスレッドで起動します。
+                // Start the bot message reader in a separate thread.
                 new System.Threading.Thread(async () => await ReadBotMessagesAsync(client, conversation.ConversationId)).Start();
 
-                // ボットとの会話を開始するようにユーザーに求めます。
+                // Prompt the user to start talking to the bot.
                 Console.Write("Conversation ID: " + conversation.ConversationId + Environment.NewLine);
                 Console.Write("Type your message (or \"exit\" to end): ");
 
-                // ユーザーがこのループを終了するまでループします。
+                // Loop until the user chooses to exit this loop.
                 while (true)
                 {
-                    // ユーザーからの入力を受け入れます。
+                    // Accept the input from the user.
                     string input = Console.ReadLine().Trim();
 
-                    // ユーザーが終了するかどうかを確認します。
+                    // Check to see if the user wants to exit.
                     if (input.ToLower() == "exit")
                     {
-                        // ユーザーが要求した場合は、アプリを終了します。
+                        // Exit the app if the user requests it.
                         break;
                     }
                     else
                     {
                         if (input.Length > 0)
                         {
-                            // ユーザーが入力したテキストを使用してメッセージ アクティビティを作成します。
+                            // Create a message activity with the text the user entered.
                             Activity userMessage = new Activity
                             {
                                 From = new ChannelAccount(fromUser),
@@ -165,7 +165,7 @@ Microsoft Bot Framework DirectLine ボットは、独自の設計のカスタム
                                 Type = ActivityTypes.Message
                             };
 
-                            // ボットにメッセージ アクティビティを送信します。
+                            // Send the message activity to the bot.
                             await client.Conversations.PostActivityAsync(conversation.ConversationId, userMessage);
                         }
                     }
@@ -174,47 +174,47 @@ Microsoft Bot Framework DirectLine ボットは、独自の設計のカスタム
 
 
             /// <summary>
-            // ボットを継続的にポーリングし、ボットからクライアントに送信されたメッセージを取得します。
+            /// Polls the bot continuously and retrieves messages sent by the bot to the client.
             /// </summary>
-            /// <param name="client">Direct Line クライアント。</param>
-            /// <param name="conversationId">会話 ID。</param>
+            /// <param name="client">The Direct Line client.</param>
+            /// <param name="conversationId">The conversation ID.</param>
             /// <returns></returns>
             private static async Task ReadBotMessagesAsync(DirectLineClient client, string conversationId)
             {
                 string watermark = null;
 
-                // 1 秒に 1 回、ボットに返信をポーリングします。
+                // Poll the bot for replies once per second.
                 while (true)
                 {
-                    // ボットからアクティビティ セットを取得します。
+                    // Retrieve the activity set from the bot.
                     var activitySet = await client.Conversations.GetActivitiesAsync(conversationId, watermark);
                     watermark = activitySet?.Watermark;
 
-                    // ボットから送信されたアクティビティを抽出します。
+                    // Extract the activies sent from our bot.
                     var activities = from x in activitySet.Activities
-                                    where x.From.Id == botId
+                                    where x.From.Id == botName
                                     select x;
 
-                    // アクティビティ セット内の各アクティビティを分析します。
+                    // Analyze each activity in the activity set.
                     foreach (Activity activity in activities)
                     {
-                        // アクティビティのテキストを表示します。
+                        // Display the text of the activity.
                         Console.WriteLine(activity.Text);
 
-                        // 添付ファイルはありますか?
+                        // Are there any attachments?
                         if (activity.Attachments != null)
                         {
-                            // アクティビティから各添付ファイルを抽出します。
+                            // Extract each attachment from the activity.
                             foreach (Attachment attachment in activity.Attachments)
                             {
                                 switch (attachment.ContentType)
                                 {
-                                    // ヒーロー カードを表示します。
+                                    // Display a hero card.
                                     case "application/vnd.microsoft.card.hero":
                                         RenderHeroCard(attachment);
                                         break;
 
-                                    // ブラウザーにイメージを表示します。
+                                    // Display the image in a browser.
                                     case "image/png":
                                         Console.WriteLine($"Opening the requested image '{attachment.ContentUrl}'");
                                         Process.Start(attachment.ContentUrl);
@@ -225,26 +225,26 @@ Microsoft Bot Framework DirectLine ボットは、独自の設計のカスタム
 
                     }
 
-                    // ボットを再度ポーリングする前に、1 秒間待ちます。
+                    // Wait for one second before polling the bot again.
                     await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                 }
             }
 
 
             /// <summary>
-            // コンソールにヒーロー カードを表示します。
+            /// Displays the hero card on the console.
             /// </summary>
-            /// <param name="attachment">ヒーロー カードが含まれる添付ファイル。</param>
+            /// <param name="attachment">The attachment that contains the hero card.</param>
             private static void RenderHeroCard(Attachment attachment)
             {
                 const int Width = 70;
-                // アスタリスクで囲まれた文字列を中央揃えする関数。
+                // Function to center a string between asterisks.
                 Func<string, string> contentLine = (content) => string.Format($"{{0, -{Width}}}", string.Format("{0," + ((Width + content.Length) / 2).ToString() + "}", content));
 
-                // ヒーロー カード データを抽出します。
+                // Extract the hero card data.
                 var heroCard = JsonConvert.DeserializeObject<HeroCard>(attachment.Content.ToString());
 
-                // ヒーロー カードを表示します。
+                // Display the hero card.
                 if (heroCard != null)
                 {
                     Console.WriteLine("/{0}", new string('*', Width + 1));

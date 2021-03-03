@@ -82,8 +82,8 @@ namespace ImageStorageLibrary
         /// <param name="document">Document to create.</param>
         /// <param name="id">ID for the created document, used in Document URI so must be valid DocuemntDB ID.</param>
         /// <returns>Tuple with whether document was created or not, and either created or existing document.</returns>
-        public async Task<Tuple<bool, T>> CreateDocumentIfNotExistsAsync<T>(T document, string id)
-            where T : new()
+        public async Task<Tuple<bool, R>> CreateDocumentIfNotExistsAsync<R>(R document, string id)
+            where R : new()
         {
                 await this.Client.AddItemAsync(document);
                 return Tuple.Create(false, document);           
@@ -96,8 +96,8 @@ namespace ImageStorageLibrary
         /// <param name="update">Document to update</param>
         /// <param name="id">ID for the updated document, used in Cosmos URI so must be valid Cosmos DB ID.</param>
         /// <returns>Updated document.</returns>
-        public async Task<T> UpdateDocumentAsync<T>(T update, string id)
-            where T : new()
+        public async Task<R> UpdateDocumentAsync<R>(R update, string id)
+            where R : new()
         {
             await this.Client.UpdateItemAsync(id, update);
             return update;
@@ -108,12 +108,11 @@ namespace ImageStorageLibrary
         /// </summary>
         /// <typeparam name="T">Type of documents to find.</typeparam>
         /// <returns>Queryable capable of returning all documents.</returns>
-        public IEnumerable<T> FindAllDocuments<T>()
-            where T : new()
+        public IEnumerable<R> FindAllDocuments<R>()
+            where R : new()
         {
             return null;
-           // return Client.GetItemsAsync("SELECT * FROM c", "MaxItemCount", "-1").Result;
-        }
+       }
 
         /// <summary>
         /// Find all documents matching the given query in the collection.
@@ -121,10 +120,10 @@ namespace ImageStorageLibrary
         /// <typeparam name="T">Type of documents to find.</typeparam>
         /// <param name="query">Query against the document store.</param>
         /// <returns>Queryable capable of returning all matching documents.</returns>
-        public IEnumerable<T> FindMatchingDocuments<T>(string query)
-            where T : new()
+        public IEnumerable<R> FindMatchingDocuments<R>(string query)
+            where R : new()
         {
-            return (IEnumerable<T>)Client.GetItemsAsync(query).Result;
+            return (IEnumerable<R>)Client.GetItemsAsync(query, new QueryRequestOptions() { MaxItemCount = -1 }).Result;
         }
 
         /// <summary>
@@ -133,16 +132,16 @@ namespace ImageStorageLibrary
         /// <typeparam name="T">Type of document to find.</typeparam>
         /// <param name="id">ID of the document, will be used to look up by CosmosDB URI.</param>
         /// <returns>Found document, or null (assuming T is nullable).</returns>
-        public async Task<T> FindDocumentByIdAsync<T>(string id)
-            where T : new()
+        public async Task<R> FindDocumentByIdAsync<R>(string id)
+            where R : new()
         {
             try
             {                
-                return await Client.GetItemAsync<T>(id);
+                return await Client.GetItemAsync<R>(id);
             }
             catch (CosmosException e)
             {
-                if (e.StatusCode == HttpStatusCode.NotFound) return default(T);
+                if (e.StatusCode == HttpStatusCode.NotFound) return default(R);
                 throw;
             }
         }

@@ -100,15 +100,15 @@ Cognitive Services を使用すると、アプリ、Web サイト、ボットに
 1. **ImageProcessor.cs**では、最初に画像の処理に使用するメソッド`ProcessImageAsync`を作成して開始しています。このコードは、サービスを使用してアクションを実行するため、非同期処理を使用します。
 
     ```csharp
-    public static async Task<ImageInsights> ProcessImageAsync(Func<Task<Stream>> imageStreamCallback, string imageId)
+    public static async Task<ImageInsights> ProcessImageAsync(string imgPath, string imageId)
     {
-        // プロセッサの過程で入力する配列を設定します。
+    // Set up an array that we'll fill in over the course of the processor:
     VisualFeature[] DefaultVisualFeaturesList = new VisualFeature[] { VisualFeature.Tags, VisualFeature.Description };
 
-    // Computer Vision を呼び出し、結果を imageAnalysisResult に格納します。
-    var imageAnalysisResult = await VisionServiceHelper.AnalyzeImageAsync(imageStreamCallback, DefaultVisualFeaturesList);
+    // Call the Computer Vision service and store the results in imageAnalysisResult:
+    var imageAnalysisResult = await VisionServiceHelper.AnalyzeImageAsync(imgPath, DefaultVisualFeaturesList);
 
-    // ImageInsights で次のエントリを作成します。
+    // Create an entry in ImageInsights:
     ImageInsights result = new ImageInsights
     {
         ImageId = imageId,
@@ -116,7 +116,7 @@ Cognitive Services を使用すると、アプリ、Web サイト、ボットに
         Tags = imageAnalysisResult.Tags.Select(t => t.Name).ToArray()
     };
 
-    // 次の結果を返します。
+    // Return results:
     return result;
     }
     ```

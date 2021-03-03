@@ -3,6 +3,10 @@
 // Step 1: Add the using directives below:
 
 // Specify the namespace
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
 namespace ProcessingLibrary
 {
     // Specify the class
@@ -10,13 +14,20 @@ namespace ProcessingLibrary
     {
         // Step 2: Create the ProcessImageAsync method:
 
-            // Step 3: Set up an array that we'll fill in over the course of the processor:
+        public static async Task<ImageInsights> ProcessImageAsync(string imgPath, string imageId)
+        {
+            
+            return null;
+        }
 
-            // Step 4: Call the Computer Vision service and store the results in imageAnalysisResult:
-        
-            // Step 5: Create an entry in ImageInsights:
-                
-            // Step 6: Return results:
+    
+    // Step 3: Set up an array that we'll fill in over the course of the processor:
+
+    // Step 4: Call the Computer Vision service and store the results in imageAnalysisResult:
+
+    // Step 5: Create an entry in ImageInsights:
+
+    // Step 6: Return results:
 
     }
 

@@ -112,6 +112,11 @@ Microsoft Bot Framework を使用して作成されたボットは、パブリ�
 
     プロンプトが表示されない場合は、クラスの名前を手動で変更してから、クラスのすべての参照を **PictureBot** に変更する必要があります。  プロジェクトをビルドしようとすると、見逃したかどうかがわかります。
 
+1. Startup.csの36行目付近の行を以下のように書き換えます。
+    ```
+    services.AddTransient<IBot, PictureBot.Bots.PictureBot>();
+    ```
+
 1. プロジェクトを右クリックして、「 **Nuget Packagaesの管理(Manage Nuget Packages)** 」を選択します
 
 1. 「**参照(Browse)**」タブをクリックし、次のパッケージをインストールします。
@@ -121,7 +126,8 @@ Microsoft Bot Framework を使用して作成されたボットは、パブリ�
     * Microsoft.Bot.Builder.AI.Luis
     * Microsoft.Bot.Builder.Integration.AspNet.Core
     * Azure.AI.TextAnalytics
-    * Microsoft.Azure.Search
+
+=======
 
 1. ソリューションをビルドします。
 
@@ -165,7 +171,7 @@ Microsoft Bot Framework を使用して作成されたボットは、パブリ�
 
 * Endpoint url に、先ほどのWeb ページに表示されている URL をコピーして、**https://<your_bots_hostname>/api/messages** という形式で入力します。
 
-* Appsettings.json に入力した AppId と App Secret を入力します
+* appsettings.json に入力した AppId と App Secret を入力します
 
     > **注**: ボット設定にidとsecretの値を入力しない場合は、ボットエミュレーターに値を入力する必要もありません。
 
@@ -197,7 +203,7 @@ Microsoft Bot Framework を使用して作成されたボットは、パブリ�
 
 1. デバッグを止め、**Startup.cs**ファイルに移動します
 
-1. `using` ステートメントに、以下のように**追加**します。
+1. `using` ステートメントに、以下を**追加**します。
 
     ```csharp
     using System;
@@ -208,7 +214,8 @@ Microsoft Bot Framework を使用して作成されたボットは、パブリ�
     using Microsoft.Bot.Connector.Authentication;
     using Microsoft.Extensions.Options;
     using Microsoft.Extensions.Logging;
-    using PictureBot.Bots;
+
+=======
 
     using Microsoft.Bot.Builder.AI.Luis;
     using Microsoft.Bot.Builder.Dialogs;
@@ -246,13 +253,12 @@ SDK を使用して、開発者は独自のミドルウェアをプログラミ�
 
     ```csharp
     private ILoggerFactory _loggerFactory;
-    private bool _isProduction = false;
     ```
 
 1. **ConfigureServices** メソッドの次のコードを置き換えます。
 
     ```csharp
-    services.AddTransient<IBot, PictureBot.Bots.PictureBot>();
+    services.AddTransient<IBot, PictureBot>();
     ```
 
     以下のコードで置き換えます。
@@ -265,64 +271,42 @@ SDK を使用して、開発者は独自のミドルウェアをプログラミ�
 
                     options.CredentialProvider = new SimpleCredentialProvider(appId, appSecret);
 
-        // アプリケーションが使用するロガーを作成します。
+        // Creates a logger for the application to use.
         ILogger logger = _loggerFactory.CreateLogger<PictureBot.Bots.PictureBot>();
 
-        // 会話のターン中に発生したエラーをキャッチし、ログに記録します。
+        // Catches any errors that occur during a conversation turn and logs them.
         options.OnTurnError = async (context, exception) =>
         {
             logger.LogError($"Exception caught : {exception}");
             await context.SendActivityAsync("Sorry, it looks like something went wrong.");
         };
 
-        // ここで使用されるメモリストレージは、ローカルボットのデバッグ専用です。ボットが
-        // 再起動すると、メモリに保存されていたものはすべてなくなります。
-        IStorage dataStore = new MemoryStorage();
-
-        // 運用ボットの場合、Azure Blob を使用するか、
-        // Azure CosmosDB ストレージ プロバイダーを使用します。Azure ベースの
-        // ストレージ プロバイダーの場合は、Microsoft.Bot.Builder.Azure
-        // Nugetパッケージをソリューションに追加します。パッケージは次の場所にあります。
-        // https://www.nuget.org/packages/Microsoft.Bot.Builder.Azure/
-        // Azure BLOB ストレージを使用するには、次の行のコメントを解除します。
-        // //.botファイルのストレージ構成名またはID。
-        // const string StorageConfigurationId = "<STORAGE-NAME-OR-ID-FROM-BOT-FILE>";
-        // var blobConfig = botConfig.FindServiceByNameOrId(StorageConfigurationId);
-        // if (!(blobConfig is BlobStorageService blobStorageConfig))
-        // {
-        //    throw new InvalidOperationException($"The .bot file does not contain an blob storage with name '{StorageConfigurationId}'.");
-        // }
-        // //デフォルトのコンテナ名。
-        // const string DefaultBotContainer = "botstate";
-        // var storageContainer = string.IsNullOrWhiteSpace(blobStorageConfig.Container) ? DefaultBotContainer : blobStorageConfig.Container;
-        // IStorage dataStore = new Microsoft.Bot.Builder.Azure.AzureBlobStorage(blobStorageConfig.ConnectionString, storageContainer);
-
-        // 会話状態オブジェクトを作成します。
-        // 会話状態オブジェクトは、会話スコープで何かを永続化する場所です。
-        var conversationState = new ConversationState(dataStore);
-
-        options.State.Add(conversationState);
 
         var middleware = options.Middleware;
-        // ミドルウェアをこの下に "middleware.Add(...." で追加する
-        // この下に正規表現を追加する
+        // Add middleware below with "middleware.Add(...."
+        // Add Regex below
     });
     ```
 
 1. **Configure** メソッドを次のコードに置き換えます。
 
-```csharp
-public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-{
-    _loggerFactory = loggerFactory;
+    ```csharp
+    public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
+    {
+        _loggerFactory = loggerFactory;
 
-    app.UseDefaultFiles()
-        .UseStaticFiles()
-        .UseBotFramework();
-
-    app.UseMvc();
-}
-```
+        app.UseDefaultFiles()
+                    .UseBotFramework()
+                    .UseStaticFiles()
+                    .UseWebSockets()
+                    .UseRouting()
+                    .UseAuthorization()
+                    .UseEndpoints(endpoints =>
+                    {
+                        endpoints.MapControllers();
+                    });
+    }
+    ```
 
 #### カスタム状態アクセサー
 
@@ -330,150 +314,159 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerF
 
 アクセサーは、SDK の中にある `IStatePropertyAccessor` インターフェイスを実装します。これによって、状態に関する情報の取得、設定、削除ができるようになります。したがって、開発者はユーザーが会話の中のどのステップにいるかを追跡することができます。
 
-作成するアクセサーのそれぞれについて、最初にプロパティ名を指定する必要があります。このラボでは、次のものを追跡します。
+1. 作成するアクセサーのそれぞれについて、最初にプロパティ名を指定する必要があります。このラボでは、次のものを追跡します。
 
-1. `PictureState`
-    * 既にユーザーに挨拶したか?
-        * 挨拶を 2 回以上する必要はありませんが、会話の最初に確実に挨拶する必要があります。
-    * ユーザーは現在特定の単語を検索しているか? もしそうなら、それは何か?
-        * ユーザーが何を探しているかをこちらに伝えてくれたかどうか、伝えてくれた場合はそれが何なのかを、追跡する必要があります。
-2. `DialogState`
-    * ユーザーは現在ダイアログの途中にいるか?
-        * これは、ユーザーがあるダイアログまたは会話フローの中のどこにいるかを特定するのに使用します。ダイアログの知識がなくても、心配しないでください。この後すぐに説明します。
+    * `PictureState`
+        * 既にユーザーに挨拶したか?
+            * 挨拶を 2 回以上する必要はありませんが、会話の最初に確実に挨拶する必要があります。
+        * ユーザーは現在特定の単語を検索しているか? もしそうなら、それは何か?
+            * ユーザーが何を探しているかをこちらに伝えてくれたかどうか、伝えてくれた場合はそれが何なのかを、追跡する必要があります。
+    * `DialogState`
+        * ユーザーは現在ダイアログの途中にいるか?
+            * これは、ユーザーがあるダイアログまたは会話フローの中のどこにいるかを特定するのに使用します。ダイアログの知識がなくても、心配しないでください。この後すぐに説明します。
 
-これらのコンストラクトを使用して、`PictureState`と呼ぶものを追跡できます。
+        これらのコンストラクトを使用して、`PictureState`と呼ぶものを追跡できます。
 
 1. **Startup.cs** ファイルの **ConfigureServices** メソッドで、カスタム状態アクセサーのリスト内に `PictureState` を追加し、ダイアログを追跡するために、組み込みの `DialogState` を使用します。
 
-```csharp
-//状態アクセス権を作成して登録します。
-//ここで作成されたアクセサーは、ターンごとにIBotから派生したクラスに渡されます。
-services.AddSingleton<PictureBotAccessors>(sp =>
-{
-    var options = sp.GetRequiredService<IOptions<BotFrameworkOptions>>().Value;
-    if (options == null)
+    ```csharp
+    // Create and register state accesssors.
+    // Acessors created here are passed into the IBot-derived class on every turn.
+    services.AddSingleton<PictureBotAccessors>(sp =>
     {
-        throw new InvalidOperationException("BotFrameworkOptions must be configured prior to setting up the state accessors");
-    }
+        var options = sp.GetRequiredService<IOptions<BotFrameworkOptions>>().Value;
+        if (options == null)
+        {
+            throw new InvalidOperationException("BotFrameworkOptions must be configured prior to setting up the state accessors");
+        }
 
-    var conversationState = options.State.OfType<ConversationState>().FirstOrDefault();
-    if (conversationState == null)
-    {
-        throw new InvalidOperationException("ConversationState must be defined and added before adding conversation-scoped state accessors.");
-    }
+        var conversationState = sp.GetRequiredService<ConversationState>();
+        //var conversationState = services.BuildServiceProvider().GetService<ConversationState>();
 
-    // カスタム状態アクセサーを作成します。
-    // 状態アクセサーは、他のコンポーネントが状態の個々のプロパティの読み取りや書き込みを行うのに使用できます。
-    var accessors = new PictureBotAccessors(conversationState)
-    {
-        PictureState = conversationState.CreateProperty<PictureState>(PictureBotAccessors.PictureStateName),
-        DialogStateAccessor = conversationState.CreateProperty<DialogState>("DialogState"),
-    };
+        if (conversationState == null)
+        {
+            throw new InvalidOperationException("ConversationState must be defined and added before adding conversation-scoped state accessors.");
+        }
 
-    return accessors;
-});
-```
+        // Create the custom state accessor.
+        // State accessors enable other components to read and write individual properties of state.
+        return new PictureBotAccessors(conversationState)
+        {
+            PictureState = conversationState.CreateProperty<PictureState>(PictureBotAccessors.PictureStateName),
+            DialogStateAccessor = conversationState.CreateProperty<DialogState>("DialogState"),
+        };
 
-いくつかのアイテムの下にエラー (赤い波線) があります。しかし、これらを修正する前に疑問に思うかもしれません。なぜアクセサーを 2 つ作成する必要があったのか? なぜ 1 つでは不十分だったのか?
+    });
+    ```
 
-* `DialogState` は `Microsoft.Bot.Builder.Dialogs` ライブラリからのアクセサーです。メッセージが送信されると、Dialog サブシステムが `CreateContext` を `DialogSet` に対して呼び出します。このコンテキストを追跡するには、`DialogState` アクセサーが必要です。これは、適切なダイアログ状態 JSON を取得するためのアクセサーです。
-* 一方、`PictureState` は、指定された特定の会話プロパティを会話全体で追跡するために使用されます (たとえば、既にユーザーに挨拶したかどうか)。
+1. いくつかのアイテムの下にエラー (赤い波線) があります。しかし、これらを修正する前に疑問に思うかもしれません。なぜアクセサーを 2 つ作成する必要があったのか? なぜ 1 つでは不十分だったのか?
 
-> ダイアログに関する専門用語を知らなくても、このプロセスは理解できるはずです。よく理解できなかった場合は、[状態のしくみの詳しい説明](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-dialog-state?view=azure-bot-service-4.0)を参照してください。
+    * `DialogState` は `Microsoft.Bot.Builder.Dialogs` ライブラリからのアクセサーです。メッセージが送信されると、Dialog サブシステムが `CreateContext` を `DialogSet` に対して呼び出します。このコンテキストを追跡するには、`DialogState` アクセサーが必要です。これは、適切なダイアログ状態 JSON を取得するためのアクセサーです。
+    * 一方、`PictureState` は、指定された特定の会話プロパティを会話全体で追跡するために使用されます (たとえば、既にユーザーに挨拶したかどうか)。
 
-では、先ほど見ていたエラーに戻りましょう。この情報を保存する必要がありますが、どこに、どのように保存するかはまだ指定していません。情報を保存してアクセスするには、"PictureState.cs" と "PictureBotAccessor.cs" を更新する必要があります。
+    > ダイアログに関する専門用語を知らなくても、このプロセスは理解できるはずです。よく理解できなかった場合は、[状態のしくみの詳しい説明](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-dialog-state?view=azure-bot-service-4.0)を参照してください。
 
-1. プロジェクトを右クリックして **「追加」- > 「クラス」** を選択し、クラスファイルを選択して**PictureState**という名前を付けます。
+1. では、先ほど見ていたエラーに戻りましょう。この情報を保存する必要がありますが、どこに、どのように保存するかはまだ指定していません。情報を保存してアクセスするには、"PictureState.cs" と "PictureBotAccessor.cs" を更新する必要があります。
+
+1. プロジェクトを右クリックして **「追加」-> 「クラス」** を選択し、クラスファイルを選択して**PictureState**という名前を付けます。
 
 1. 次のコードを **PictureState.cs** にコピーします。
 
-```csharp
-using System.Collections.Generic;
+    ```csharp
+    using System.Collections.Generic;
 
-namespace Microsoft.PictureBot
-{
-    /// <summary>
-    ///会話のカウンタ状態を保存します。
-    ///<see cref="Microsoft.Bot.Builder.ConversationState"/>に保存され、
-    ///<see cref="Microsoft.Bot.Builder.MemoryStorage"/> によって支援されます。
-    /// </summary>
-    public class PictureState
+    namespace Microsoft.PictureBot
     {
         /// <summary>
-        /// 会話のターン数を取得または設定します。
+        /// Stores counter state for the conversation.
+        /// Stored in <see cref="Microsoft.Bot.Builder.ConversationState"/> and
+        /// backed by <see cref="Microsoft.Bot.Builder.MemoryStorage"/>.
         /// </summary>
-        /// <value>会話のターン数。</value>
-        public string Greeted { get; set; } = "not greeted";
-        public string Search { get; set; } = "";
-        public string Searching { get; set; } = "no";
+        public class PictureState
+        {
+            /// <summary>
+            /// Gets or sets the number of turns in the conversation.
+            /// </summary>
+            /// <value>The number of turns in the conversation.</value>
+            public string Greeted { get; set; } = "not greeted";
+            public string Search { get; set; } = "";
+            public string Searching { get; set; } = "no";
+        }
     }
-}
-```
+    ```
 
 1. コードを確認します。  ここに、アクティブな会話に関する情報を格納します。  文字列の目的を説明するコメントを自由に追加してください。これで、PictureState が適切に初期化されたので、"**Startup.cs**" で発生していたエラーを解消するように PictureBotAccessor を作成できます。
 
-1. プロジェクトを右クリックして **「追加」- > 「クラス」** を選択し、クラスファイルを選択して**PictureBotAccessors**という名前を付けます。
+1. プロジェクトを右クリックして **「追加」-> 「クラス」** を選択し、クラスファイルを選択して**PictureBotAccessors**という名前を付けます。
 
 1. 次の項目をコピーします。
 
-```csharp
-using System;
-using Microsoft.Bot.Builder;
-using Microsoft.Bot.Builder.Dialogs;
+    ```csharp
+    using System;
+    using Microsoft.Bot.Builder;
+    using Microsoft.Bot.Builder.Dialogs;
 
-namespace Microsoft.PictureBot
-{
-    /// <summary>
-    ///このクラスはシングルトンとして作成され、IBotから派生したコンストラクターに渡されます。
-    /// -注入方法については<see cref="PictureBot"/>コンストラクタを参照してください。
-    /// -取得するシングルトンの作成の詳細については、コンストラクタに挿入される Startup.cs ファイルを
-    /// 参照してください。
-    /// </summary>
-    public class PictureBotAccessors
+    namespace Microsoft.PictureBot
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PictureBotAccessors"/> class.
-        /// Contains the <see cref="ConversationState"/> and associated <see cref="IStatePropertyAccessor{T}"/>.
+        /// This class is created as a Singleton and passed into the IBot-derived constructor.
+        ///  - See <see cref="PictureBot"/> constructor for how that is injected.
+        ///  - See the Startup.cs file for more details on creating the Singleton that gets
+        ///    injected into the constructor.
         /// </summary>
-        /// <param name="conversationState">The state object that stores the counter.</param>
-        public PictureBotAccessors(ConversationState conversationState)
+        public class PictureBotAccessors
         {
-            ConversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
+            /// <summary>
+            /// Initializes a new instance of the <see cref="PictureBotAccessors"/> class.
+            /// Contains the <see cref="ConversationState"/> and associated <see cref="IStatePropertyAccessor{T}"/>.
+            /// </summary>
+            /// <param name="conversationState">The state object that stores the counter.</param>
+            public PictureBotAccessors(ConversationState conversationState)
+            {
+                ConversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
+            }
+
+            /// <summary>
+            /// Gets the <see cref="IStatePropertyAccessor{T}"/> name used for the <see cref="CounterState"/> accessor.
+            /// </summary>
+            /// <remarks>Accessors require a unique name.</remarks>
+            /// <value>The accessor name for the counter accessor.</value>
+            public static string PictureStateName { get; } = $"{nameof(PictureBotAccessors)}.PictureState";
+
+            /// <summary>
+            /// Gets or sets the <see cref="IStatePropertyAccessor{T}"/> for CounterState.
+            /// </summary>
+            /// <value>
+            /// The accessor stores the turn count for the conversation.
+            /// </value>
+            public IStatePropertyAccessor<PictureState> PictureState { get; set; }
+
+            /// <summary>
+            /// Gets the <see cref="ConversationState"/> object for the conversation.
+            /// </summary>
+            /// <value>The <see cref="ConversationState"/> object.</value>
+            public ConversationState ConversationState { get; }
+
+            /// <summary> Gets the IStatePropertyAccessor{T} name used for the DialogState accessor. </summary>
+            public static string DialogStateName { get; } = $"{nameof(PictureBotAccessors)}.DialogState";
+
+            /// <summary> Gets or sets the IStatePropertyAccessor{T} for DialogState. </summary>
+            public IStatePropertyAccessor<DialogState> DialogStateAccessor { get; set; }
         }
-
-        /// <summary>
-        /// Gets the <see cref="IStatePropertyAccessor{T}"/> name used for the <see cref="CounterState"/> accessor.
-        /// </summary>
-        /// <remarks>アクセサには一意の名前が必要です。</remarks>
-        /// <value>カウンター アクセサーのアクセサー名。</value>
-        public static string PictureStateName { get; } = $"{nameof(PictureBotAccessors)}.PictureState";
-
-        /// <summary>
-        /// Gets or sets the <see cref="IStatePropertyAccessor{T}"/> for CounterState.
-        /// </summary>
-        /// <value>
-        ///アクセサは、会話のターン カウントを保存します。
-        /// </value>
-        public IStatePropertyAccessor<PictureState> PictureState { get; set; }
-
-        /// <summary>
-        ///<see cref="ConversationState"/>会話オブジェクトをを取得します。
-        /// </summary>
-        /// <value>The <see cref="ConversationState"/> object.</value>
-        public ConversationState ConversationState { get; }
-
-        /// <summary> DialogState アクセサーに使用する IStatePropertyAccessor{T} の名前を取得します。</summary>
-        public static string DialogStateName { get; } = $"{nameof(PictureBotAccessors)}.DialogState";
-
-        /// <summary> DialogState のための IStatePropertyAccessor{T} を取得または設定します。</summary>
-        public IStatePropertyAccessor<DialogState> DialogStateAccessor { get; set; }
     }
-}
-```
+    ```
 
 1. コードを確認し、`PictureStateName`と`PictureState`の実装に注目してください。
 
+1. Staratup.csに以下のusing句を追加します。
+
+```
+using Microsoft.PictureBot;
+```
+
 1. これを正しく構成したかどうかが心配ですか? 「**Startup.cs**」 に戻り、カスタム状態アクセサーの作成に関するエラーが解決されていることを確認してください。
+
+    > すべてのエラーが消えたわけではありません。次の手順で解決していきます。
 
 ## ラボ 3.3: ボットのコードを整理する
 
@@ -481,9 +474,9 @@ namespace Microsoft.PictureBot
 
 この PictureBot は、次のように整理します。
 
-* **ダイアログ** - モデルを編集するためのビジネス ロジック
-* **応答** - ユーザーへの出力を定義するクラス
-* **モデル** - 変更対象のオブジェクト
+* **Dialogs** - モデルを編集するためのビジネス ロジック
+* **Responses** - ユーザーへの出力を定義するクラス
+* **Models** - 変更対象のオブジェクト
 
 1. プロジェクト内に 2 つの新しいフォルダー 「**Responses**」 と 「**Models**」 を作成するには、プロジェクトを右クリックし、**「追加」 > 「新しいフォルダー」** を選択します。
 
@@ -503,135 +496,113 @@ namespace Microsoft.PictureBot
 
 1. **PictureBot.cs** に戻り、一連の `using` ステートメントを次のコードで置き換えます。
 
-```csharp
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Bot.Builder;
-using Microsoft.Bot.Schema;
-using Microsoft.Bot.Builder.Dialogs;
-using Microsoft.Extensions.Logging;
-using System.Linq;
-using PictureBot.Models;
-using PictureBot.Responses;
-using Microsoft.Bot.Builder.AI.Luis;
-using Microsoft.Azure.Search;
-using Microsoft.Azure.Search.Models;
-using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Microsoft.PictureBot;
-```
+    ```csharp
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Bot.Builder;
+    using Microsoft.Bot.Builder.Dialogs;
+    using Microsoft.Bot.Schema;
+    using Microsoft.PictureBot;
+    using PictureBot.Responses;
+    ```
 
-これで、モデル/応答へのアクセスと、サービス LUIS と Azure Cognitive Search へのアクセスが追加されました。最後の Newtonsoft への参照は、LUIS からの応答を解析するのに役立ちます。これについては、後続のラボで学習します。
+これで、Models/Responsesへのアクセスと、サービス LUIS と Azure Cognitive Search へのアクセスが追加されました。最後の Newtonsoft への参照は、LUIS からの応答を解析するのに役立ちます。これについては、後続のラボで学習します。
 
 次に、`OnTurnAsync` のメソッドを置き換える必要があります。具体的には、受け取ったメッセージを処理してからさまざまなダイアログを通してそのメッセージをルーティングするメソッドで置き換えます。
 
-1. **PictureBot** クラスを次のものに置き換えます。
+1. **PictureBot** クラスを次のコードで置き換えます。
 
-```csharp
-/// <summary>
-/// 受け取ったアクティビティを処理するボットを表します。
-/// ユーザーとのやり取りのたびに、このクラスのインスタンスが 1 つ作成され、OnTurnAsync メソッドが呼び出されます。
-/// これは有効期間が一時的であるサービスです。  有効期間が一時的のサービスは、
-/// 要求されるたびに作成されます。受信したアクティビティごとに、このクラスの新しい
-/// インスタンスが作成されます。オブジェクトの構築にコストがかかる場合や、有効期間が
-/// ターン 1 つだけでない場合は、管理に注意が必要です。
-/// たとえば、<see cref="MemoryStorage"/> オブジェクトと、関連付けられた
-/// <see cref="IStatePropertyAccessor{T}"/> は、シングルトンの有効期間で作成されます。
-/// </summary>
-/// <seealso cref="https://docs.microsoft.com/ja-jp/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.1"/>
-/// <summary>この中に、写真ボットのためのダイアログとプロンプト一式があります。</summary>
-public class PictureBot : ActivityHandler
-{
-    private readonly PictureBotAccessors _accessors;
-    // LUIS 認識エンジンを初期化する
-
-    private readonly ILogger _logger;
-    private DialogSet _dialogs;
-
+    ```csharp
     /// <summary>
-    /// PictureBot のすべての会話ターンでこのメソッドを呼び出します。
-    /// ダイアログは使用しません。これは "シングル ターン" 処理、つまりただ 1 つの
-    /// 要求と応答であるからです。後でダイアログを追加するときに、このメソッドを見直す必要があります。
+    /// Represents a bot that processes incoming activities.
+    /// For each user interaction, an instance of this class is created and the OnTurnAsync method is called.
+    /// This is a Transient lifetime service.  Transient lifetime services are created
+    /// each time they're requested. For each Activity received, a new instance of this
+    /// class is created. Objects that are expensive to construct, or have a lifetime
+    /// beyond the single turn, should be carefully managed.
+    /// For example, the <see cref="MemoryStorage"/> object and associated
+    /// <see cref="IStatePropertyAccessor{T}"/> object are created with a singleton lifetime.
     /// </summary>
-    /// <param name="turnContext"><see cref="ITurnContext"/> 型。この会話ターンの処理に
-    /// 必要なデータすべてが格納されます。</param>
-    /// <param name="cancellationToken">(省略可能) <see cref="CancellationToken"/> 型。他のオブジェクトまたはスレッドで
-    /// キャンセルの通知を受け取るのに使用されます。</param>
-    /// <returns><see cref="Task"/> 型。実行のためにキューに登録された作業を表します。</returns>
-    /// <seealso cref="BotStateSet"/>
-    /// <seealso cref="ConversationState"/>
-    /// <seealso cref="IMiddleware"/>
-    public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+    /// <seealso cref="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.1"/>
+    /// <summary>Contains the set of dialogs and prompts for the picture bot.</summary>
+    public class PictureBot : ActivityHandler
     {
-        if (turnContext.Activity.Type is "message")
-        {
-            // ダイアログのコンテキストを会話の状態から確立します。
-            var dc = await _dialogs.CreateContextAsync(turnContext);
-            // 現在のダイアログがある場合は続行します。
-            var results = await dc.ContinueDialogAsync(cancellationToken);
+        private readonly PictureBotAccessors _accessors;
+        // Initialize LUIS Recognizer
 
-            // すべてのターンで応答を送信します。したがって、応答が何も送信されなかった場合は、
-            // 現在アクティブなダイアログはありません。
-            if (!turnContext.Responded)
+        private DialogSet _dialogs;
+
+        /// <summary>
+        /// Every conversation turn for our PictureBot will call this method.
+        /// There are no dialogs used, since it's "single turn" processing, meaning a single
+        /// request and response. Later, when we add Dialogs, we'll have to navigate through this method.
+        /// </summary>
+        /// <param name="turnContext">A <see cref="ITurnContext"/> containing all the data needed
+        /// for processing this conversation turn. </param>
+        /// <param name="cancellationToken">(Optional) A <see cref="CancellationToken"/> that can be used by other objects
+        /// or threads to receive notice of cancellation.</param>
+        /// <returns>A <see cref="Task"/> that represents the work queued to execute.</returns>
+        /// <seealso cref="BotStateSet"/>
+        /// <seealso cref="ConversationState"/>
+        /// <seealso cref="IMiddleware"/>
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (turnContext.Activity.Type is "message")
             {
-                // メイン ダイアログを起動する
-                await dc.BeginDialogAsync("mainDialog", null, cancellationToken);
+                // Establish dialog context from the conversation state.
+                var dc = await _dialogs.CreateContextAsync(turnContext);
+                // Continue any current dialog.
+                var results = await dc.ContinueDialogAsync(cancellationToken);
+
+                // Every turn sends a response, so if no response was sent,
+                // then there no dialog is currently active.
+                if (!turnContext.Responded)
+                {
+                    // Start the main dialog
+                    await dc.BeginDialogAsync("mainDialog", null, cancellationToken);
+                }
             }
         }
-    }
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PictureBot"/> class.
-    /// </summary>
-    /// <param name="accessors">状態の管理に使用される <see cref="IStatePropertyAccessor{T}"/> が格納されているクラス。</param>
-    /// <param name="loggerFactory"><see cref="ILoggerFactory"/> 型。Azure アプリ サービス プロバイダーにフックされます。</param>
-    /// <seealso cref="https://docs.microsoft.com/ja-jp/aspnet/core/fundamentals/logging/?view=aspnetcore-2.1#windows-eventlog-provider"/>
-    public PictureBot(PictureBotAccessors accessors, ILoggerFactory loggerFactory /*, LuisRecognizer recognizer*/)
-    {
-        if (loggerFactory == null)
+
+        public PictureBot(PictureBotAccessors accessors)
         {
-            throw new System.ArgumentNullException(nameof(loggerFactory));
+            _accessors = accessors ?? throw new System.ArgumentNullException(nameof(accessors));
+
+            // The DialogSet needs a DialogState accessor, it will call it when it has a turn context.
+            _dialogs = new DialogSet(_accessors.DialogStateAccessor);
+
+            // This array defines how the Waterfall will execute.
+            // We can define the different dialogs and their steps here
+            // allowing for overlap as needed. In this case, it's fairly simple
+            // but in more complex scenarios, you may want to separate out the different
+            // dialogs into different files.
+            var main_waterfallsteps = new WaterfallStep[]
+            {
+                GreetingAsync,
+                MainMenuAsync,
+            };
+            var search_waterfallsteps = new WaterfallStep[]
+            {
+                // Add SearchDialog water fall steps
+
+            };
+
+            // Add named dialogs to the DialogSet. These names are saved in the dialog state.
+            _dialogs.Add(new WaterfallDialog("mainDialog", main_waterfallsteps));
+            _dialogs.Add(new WaterfallDialog("searchDialog", search_waterfallsteps));
+            // The following line allows us to use a prompt within the dialogs
+            _dialogs.Add(new TextPrompt("searchPrompt"));
         }
 
-        // LUIS 認識エンジンのインスタンスを追加する
+        // Add MainDialog-related tasks
 
-        _logger = loggerFactory.CreateLogger<PictureBot>();
-        _logger.LogTrace("PictureBot turn start.");
-        _accessors = accessors ?? throw new System.ArgumentNullException(nameof(accessors));
+        // Add SearchDialog-related tasks
 
-        // DialogSet には DialogState アクセサーが必要です。ターン コンテキストがあるときにこれを呼び出します。
-        _dialogs = new DialogSet(_accessors.DialogStateAccessor);
+        // Add search related tasks
 
-        // この配列は、ウォーター フォールの実行方法を定義します。
-        // さまざまなダイアログとそのステップをここで定義できます。
-        // 必要であれば、オーバーラップも可能です。この場合は、非常に簡単です。
-        // しかし、より複雑なシナリオでは、ダイアログをそれぞれ
-        // 別のファイルに分けることが必要になります。
-        var main_waterfallsteps = new WaterfallStep[]
-        {
-            GreetingAsync,
-            MainMenuAsync,
-        };
-        var search_waterfallsteps = new WaterfallStep[]
-        {
-            // SearchDialog ウォーター フォールのステップを追加する
-
-        };
-
-        // 名前付きダイアログを DialogSet に追加します。これらの名前は、ダイアログ状態の中に保存されます。
-        _dialogs.Add(new WaterfallDialog("mainDialog", main_waterfallsteps));
-        _dialogs.Add(new WaterfallDialog("searchDialog", search_waterfallsteps));
-        // 次の行で、プロンプトをダイアログ内で使用できるようにする
-        _dialogs.Add(new TextPrompt("searchPrompt"));
     }
-    // MainDialog 関連のタスクを追加する
-
-    // SearchDialog ダイアログ関連のタスクを追加する
-
-    // 検索関連のタスクを追加する
-
-}
-```
+    ```
 
 少し時間を取ってこのシェルを精査し、ワークショップの他の参加者とディスカッションしてください。続行する前に各行の目的を理解する必要があります。
 
@@ -645,77 +616,82 @@ public class PictureBot : ActivityHandler
 
 1. **MainResponses.cs** で、コードを次のように置き換えます。
 
-```csharp
-using System.Threading.Tasks;
-using Microsoft.Bot.Builder;
+    ```csharp
+    using System.Threading.Tasks;
+    using Microsoft.Bot.Builder;
 
-namespace PictureBot.Responses
-{
-    public class MainResponses
+    namespace PictureBot.Responses
     {
-        public static async Task ReplyWithGreeting(ITurnContext context)
+        public class MainResponses
         {
-            // 挨拶を追加する
-        }
-        public static async Task ReplyWithHelp(ITurnContext context)
-        {
-            await context.SendActivityAsync($"I can search for pictures, share pictures and order prints of pictures.");
-        }
-        public static async Task ReplyWithResumeTopic(ITurnContext context)
-        {
-            await context.SendActivityAsync($"What can I do for you?");
-        }
-        public static async Task ReplyWithConfused(ITurnContext context)
-        {
-            // ユーザーへの応答を追加する (正規表現と LUIS のどちらも
-            // ユーザーが伝えようとすることを理解しない場合)
-        }
-        public static async Task ReplyWithLuisScore(ITurnContext context, string key, double score)
-        {
-            await context.SendActivityAsync($"Intent: {key} ({score}).");
-        }
-        public static async Task ReplyWithShareConfirmation(ITurnContext context)
-        {
-            await context.SendActivityAsync($"Posting your picture(s) on twitter...");
-        }
-        public static async Task ReplyWithOrderConfirmation(ITurnContext context)
-        {
-            await context.SendActivityAsync($"Ordering standard prints of your picture(s)...");
+            public static async Task ReplyWithGreeting(ITurnContext context)
+            {
+                await context.SendActivityAsync("Hello, Im a Picture Bot");
+            }
+            public static async Task ReplyWithHelp(ITurnContext context)
+            {
+                await context.SendActivityAsync($"I can search for pictures, share pictures and order prints of pictures.");
+            }
+            public static async Task ReplyWithResumeTopic(ITurnContext context)
+            {
+                await context.SendActivityAsync($"What can I do for you?");
+            }
+            public static async Task ReplyWithConfused(ITurnContext context)
+            {
+                // Add a response for the user if Regex or LUIS doesn't know
+                // What the user is trying to communicate
+                await context.SendActivityAsync($"I'm sorry, I don't understand.");
+            }
+            public static async Task ReplyWithLuisScore(ITurnContext context, string key, double score)
+            {
+                await context.SendActivityAsync($"Intent: {key} ({score}).");
+            }
+            public static async Task ReplyWithShareConfirmation(ITurnContext context)
+            {
+                await context.SendActivityAsync($"Posting your picture(s) on twitter...");
+            }
+            public static async Task ReplyWithOrderConfirmation(ITurnContext context)
+            {
+                await context.SendActivityAsync($"Ordering standard prints of your picture(s)...");
+            }
+            public static async Task ReplyWithSearchConfirmation(ITurnContext context)
+            {
+                await context.SendActivityAsync($"Searching picture(s)...");
+            }
         }
     }
-}
-```
+    ```
 
 値のない応答が 2 つあることに注目してください (ReplyWithGreeting と ReplyWithConfused)。適切だと思う値を入力してしてください。
 
 1. 「SearchResponses.cs」内で、コードを次のように置き換えます。
 
-```csharp
-using Microsoft.Bot.Builder;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Bot.Schema;
+    ```csharp
+    using Microsoft.Bot.Builder;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Bot.Schema;
 
-namespace PictureBot.Responses
-{
-    public class SearchResponses
+    namespace PictureBot.Responses
     {
-        // "ReplyWithSearchRequest" というタスクを追加する
-        // これはコンテキストを受け取り、ユーザーに
-        // 何を検索するかを尋ねます。
-        public static async Task ReplyWithSearchConfirmation(ITurnContext context, string utterance)
+        public class SearchResponses
         {
-            await context.SendActivityAsync($"OK、{utterance} の写真を検索します");
-        }
-        public static async Task ReplyWithNoResults(ITurnContext context, string utterance)
-        {
-            await context.SendActivityAsync(" \"" + utterance + "\" の結果は見つかりませんでした。");
+            // add a task called "ReplyWithSearchRequest"
+            // it should take in the context and ask the
+            // user what they want to search for
+            public static async Task ReplyWithSearchConfirmation(ITurnContext context, string utterance)
+            {
+                await context.SendActivityAsync($"Ok, searching for pictures of {utterance}");
+            }
+            public static async Task ReplyWithNoResults(ITurnContext context, string utterance)
+            {
+                await context.SendActivityAsync("There were no results found for \"" + utterance + "\".");
+            }
         }
     }
-}
-```
+    ```
 
 1. タスク全体が欠落していることに注意してください。適切だと思う内容を自分で入力してください。ただし、新しいタスクの名前は 「ReplyWithSearchRequest」 としてください。このとおりでない場合は、後で問題が発生する可能性があります。
 
@@ -735,15 +711,15 @@ namespace PictureBot.Responses
 
 ラボを続行する前に、ミドルウェアと Bot Framework SDK についてさらに学習してください。
 
-1. [概要とアーキテクチャ](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-basics?view=azure-bot-service-4.0)
+    * [概要とアーキテクチャ](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-basics?view=azure-bot-service-4.0)
 
-1. [ミドルウェア](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-concept-middleware?view=azure-bot-service-4.0)
+    * [ミドルウェア](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-concept-middleware?view=azure-bot-service-4.0)
 
-1. [ミドルウェアの作成](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-create-middleware?view=azure-bot-service-4.0&tabs=csaddmiddleware%2Ccsetagoverwrite%2Ccsmiddlewareshortcircuit%2Ccsfallback%2Ccsactivityhandler)
+    * [ミドルウェアの作成](https://docs.microsoft.com/ja-jp/azure/bot-service/bot-builder-create-middleware?view=azure-bot-service-4.0&tabs=csaddmiddleware%2Ccsetagoverwrite%2Ccsmiddlewareshortcircuit%2Ccsfallback%2Ccsactivityhandler)
 
 最終的には、ミドルウェアを使用して、ユーザーが言っていることの理解を試みます。最初に正規表現 (Regex) を使用し、理解できない場合は LUIS を呼び出します。それでも理解できない場合は、「おっしゃっていることの意味がわかりません」という応答、またはその他の開発者が 「ReplyWithConfused」 に対して指定したものを返します。
 
-1. 「**Startup.cs**」 の、`ConfigureServices` の中にある「この下に正規表現を追加する」というコメントの下に、次の行を追加します。
+1. 「**Startup.cs**」 の、`ConfigureServices` の中にある「// Add Regex below」というコメントの下に、次の行を追加します。
 
 ```csharp
 middleware.Add(new RegExpRecognizerMiddleware()
@@ -751,60 +727,36 @@ middleware.Add(new RegExpRecognizerMiddleware()
 .AddIntent("share", new Regex("share picture(?:s)*(.*)|share pic(?:s)*(.*)", RegexOptions.IgnoreCase))
 .AddIntent("order", new Regex("order picture(?:s)*(.*)|order print(?:s)*(.*)|order pic(?:s)*(.*)", RegexOptions.IgnoreCase))
 .AddIntent("help", new Regex("help(.*)", RegexOptions.IgnoreCase)));
-
 ```
 
-> ここでは、正規表現の使い方のごく一部を示しています。興味がある場合は、[こちらの詳しい情報を参照してください](https://docs.microsoft.com/ja-jp/dotnet/standard/base-types/regular-expression-language-quick-reference)。
+    > ここでは、正規表現の使い方のごく一部を示しています。興味がある場合は、[こちらの詳しい情報を参照してください](https://docs.microsoft.com/ja-jp/dotnet/standard/base-types/regular-expression-language-quick-reference)。
 
-1. `options.State` が非推奨になったことにお気づきかもしれません。  最新の方法に移行してみましょう。
-
-1. 次のコードを削除します。
+1. 次のコードを`ConfigureServices`に追加します。
 
     ```csharp
-    var conversationState = new ConversationState(dataStore);
+    // Create the User state.
+    services.AddSingleton<UserState>(sp => {
+        var dataStore = sp.GetRequiredService<IStorage>();
+            return new UserState(dataStore);
+    });
 
-    options.State.Add(conversationState);
-    ```
-
-1. 次に置き換えます
-
-    ```csharp
-    var userState = new UserState(dataStore);
-    var conversationState = new ConversationState(dataStore);
-
-    //ユーザー状態を作成します。
-    services.AddSingleton<UserState>(userState);
-
-    //会話状態を作成します。
-    services.AddSingleton<ConversationState>(conversationState);
-    ```
-
-1. また、依存性注入バージョンからプルするように `ConfigureServices` コードを置き換えます。
-
-1. 次のコードを削除します
-
-    ```csharp
-    var conversationState = options.State.OfType<ConversationState>().FirstOrDefault();
-    if (conversationState == null)
+    // Create the Conversation state.
+    services.AddSingleton<ConversationState>(sp =>
     {
-        throw new InvalidOperationException("ConversationState must be defined and added before adding conversation-scoped state accessors.");
-    }
-    ```
+        var dataStore = sp.GetRequiredService<IStorage>();
+        return new ConversationState(dataStore);
+    });
 
-1. 次に置き換えます
-
-    ```csharp
-    var conversationState = services.BuildServiceProvider().GetService<ConversationState>();
-
-    if (conversationState == null)
+    // Create the IStorage.
+    services.AddSingleton<IStorage, MemoryStorage>(sp =>
     {
-        throw new InvalidOperationException("ConversationState must be defined and added before adding conversation-scoped state accessors.");
-    }
+        return new MemoryStorage();
+    });
     ```
 
-LUIS を追加していないので、このボットはいくつかのバリエーションを理解するだけですが、ユーザーがこのボットを使って写真を検索し、共有し、プリントを注文するときに、かなりのメッセージを理解するはずです。
+1. LUIS を追加していないので、このボットはいくつかのバリエーションを理解するだけですが、ユーザーがこのボットを使って写真を検索し、共有し、プリントを注文するときに、かなりのメッセージを理解するはずです。
 
-> 余談: ボットができることについてのオプションを並べたメニューを受け取るためにユーザーが「help」と入力する必要はないと主張する人もいるかもしれませんが、これはボットと最初に接触したときの既定の動作です。**見つけやすさ**はボットにとって最大の課題の 1 つです。このボットに何ができるかをユーザーに知ってもらう必要があります。 優れた[ボット設計の原則](https://docs.microsoft.com/ja-jp/bot-framework/bot-design-principles)が役立ちます。
+    > 余談: ボットができることについてのオプションを並べたメニューを受け取るためにユーザーが「help」と入力する必要はないと主張する人もいるかもしれませんが、これはボットと最初に接触したときの既定の動作です。**見つけやすさ**はボットにとって最大の課題の 1 つです。このボットに何ができるかをユーザーに知ってもらう必要があります。 優れた[ボット設計の原則](https://docs.microsoft.com/ja-jp/bot-framework/bot-design-principles)が役立ちます。
 
 ## ラボ 3.5: ボットを実行する
 
@@ -812,93 +764,93 @@ LUIS を追加していないので、このボットはいくつかのバリエ
 
 本題に戻りましょう。ボットがユーザーの言いたいことに反応できるように、PictureBot.cs　内で MainDialog に記入する必要があります。 正規表現からの結果に基づいて、正しい方向に会話を指示する必要があります。コードを注意深く読んで、コードが何をしているのかを理解することを確認してください。
 
-1. **PictureBot.cs** で、次のメソッド コードを貼り付けて追加します。
+1. **PictureBot.cs** で、次のコードを貼り付けて追加します。
 
-```csharp
-// まだユーザーに挨拶していない場合は最初に挨拶しますが、会話の残りの
-// 部分では、挨拶済みであることを記憶しておく必要があります。
-private async Task<DialogTurnResult> GreetingAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-{
-    // 会話の現在のステップの状態を取得する
-    var state = await _accessors.PictureState.GetAsync(stepContext.Context, () => new PictureState());
-
-    // まだユーザーに挨拶していない場合
-    if (state.Greeted == "not greeted")
+    ```csharp
+    // If we haven't greeted a user yet, we want to do that first, but for the rest of the
+    // conversation we want to remember that we've already greeted them.
+    private async Task<DialogTurnResult> GreetingAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
     {
-        // ユーザーに挨拶する
-        await MainResponses.ReplyWithGreeting(stepContext.Context);
-        // GreetedState を "挨拶済み" に更新する
-        state.Greeted = "greeted";
-        // 新しい "挨拶済み" 状態を会話の状態に保存する
-        // これは以降のターンで再びユーザーに挨拶しないために行います。
-        await _accessors.ConversationState.SaveChangesAsync(stepContext.Context);
-        // 次に何をしたいかユーザーに尋ねる
-        await MainResponses.ReplyWithHelp(stepContext.Context);
-        // このステップでは明示的にユーザーにプロンプトを出さないので、ダイアログが終了します。
-        // ユーザーが応答したときに、状態が維持されているので、else 句で
-        // 次のウォーター フォール ステップに進ませます。
-        return await stepContext.EndDialogAsync();
-    }
-    else // ユーザーに挨拶済み
-    {
-        // 次のウォーター フォール ステップ (MainMenuAsync) に移動する
-        return await stepContext.NextAsync();
-    }
+        // Get the state for the current step in the conversation
+        var state = await _accessors.PictureState.GetAsync(stepContext.Context, () => new PictureState());
 
-}
-
-// このステップでユーザーをさまざまなダイアログにルーティングする
-// この例では他のダイアログは 1 つだけのため単純ですが、
-// より複雑なシナリオでは、同様の他のダイアログに移動できます。
-public async Task<DialogTurnResult> MainMenuAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-{
-    // 現在ユーザーの検索を処理しているかどうかを調べる
-    var state = await _accessors.PictureState.GetAsync(stepContext.Context);
-
-    // 正規表現で何らかのことを理解した場合は、それを保存する
-    var recognizedIntents = stepContext.Context.TurnState.Get<IRecognizedIntents>();
-    // 認識された意図に基づいて、会話の方向を決める
-    switch (recognizedIntents.TopIntent?.Name)
-    {
-        case "search":
-            // 検索ダイアログに切り替える
-            return await stepContext.BeginDialogAsync("searchDialog", null, cancellationToken);
-        case "share":
-            // 写真を共有することを応答として返す
-            await MainResponses.ReplyWithShareConfirmation(stepContext.Context);
-            return await stepContext.EndDialogAsync();
-        case "order":
-            // 注文することを応答として返す
-            await MainResponses.ReplyWithOrderConfirmation(stepContext.Context);
-            return await stepContext.EndDialogAsync();
-        case "help":
-            // ヘルプを表示する
+        // If we haven't greeted the user
+        if (state.Greeted == "not greeted")
+        {
+            // Greet the user
+            await MainResponses.ReplyWithGreeting(stepContext.Context);
+            // Update the GreetedState to greeted
+            state.Greeted = "greeted";
+            // Save the new greeted state into the conversation state
+            // This is to ensure in future turns we do not greet the user again
+            await _accessors.ConversationState.SaveChangesAsync(stepContext.Context);
+            // Ask the user what they want to do next
             await MainResponses.ReplyWithHelp(stepContext.Context);
+            // Since we aren't explicitly prompting the user in this step, we'll end the dialog
+            // When the user replies, since state is maintained, the else clause will move them
+            // to the next waterfall step
             return await stepContext.EndDialogAsync();
-        default:
-            {
-                await MainResponses.ReplyWithConfused(stepContext.Context);
-                return await stepContext.EndDialogAsync();
-            }
+        }
+        else // We've already greeted the user
+        {
+            // Move to the next waterfall step, which is MainMenuAsync
+            return await stepContext.NextAsync();
+        }
+
     }
-}
-```
+
+    // This step routes the user to different dialogs
+    // In this case, there's only one other dialog, so it is more simple,
+    // but in more complex scenarios you can go off to other dialogs in a similar
+    public async Task<DialogTurnResult> MainMenuAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+    {
+        // Check if we are currently processing a user's search
+        var state = await _accessors.PictureState.GetAsync(stepContext.Context);
+
+        // If Regex picks up on anything, store it
+        var recognizedIntents = stepContext.Context.TurnState.Get<IRecognizedIntents>();
+        // Based on the recognized intent, direct the conversation
+        switch (recognizedIntents.TopIntent?.Name)
+        {
+            case "search":
+                // switch to the search dialog
+                return await stepContext.BeginDialogAsync("searchDialog", null, cancellationToken);
+            case "share":
+                // respond that you're sharing the photo
+                await MainResponses.ReplyWithShareConfirmation(stepContext.Context);
+                return await stepContext.EndDialogAsync();
+            case "order":
+                // respond that you're ordering
+                await MainResponses.ReplyWithOrderConfirmation(stepContext.Context);
+                return await stepContext.EndDialogAsync();
+            case "help":
+                // show help
+                await MainResponses.ReplyWithHelp(stepContext.Context);
+                return await stepContext.EndDialogAsync();
+            default:
+                {
+                    await MainResponses.ReplyWithConfused(stepContext.Context);
+                    return await stepContext.EndDialogAsync();
+                }
+        }
+    }
+    ```
 
 1. **F5** を押してボットを実行します。
 
 1. ボット エミュレーターを使用して、いくつかのコマンドを送信してボットをテストします。
 
-* help
-* share pics
-* order pics
-* search pics
-  
-> **注** ボットで500エラーが発生した場合、**OnTurnError** デリゲート メソッド内の **Startup.cs** ファイルにブレークポイントを配置できます。  最も一般的なエラーは、AppId と AppSecret の不一致です。
+    * help
+    * share pics
+    * order pics
+    * search pics
+    
+    > **注** ボットで500エラーが発生した場合、**OnTurnError** デリゲート メソッド内の **Startup.cs** ファイルにブレークポイントを配置できます。  最も一般的なエラーは、AppId と AppSecret の不一致です。
 
 1. 期待どおりの結果を得られなかったのが 「search pics」 だけの場合は、すべては自分で構成したとおりに動作しています。「search pics」 の失敗は、ラボのこの時点での予期される動作ですが、理由は分かりますか? 次に進む前に答えを考えてください。
 
->ヒント: ブレーク ポイントを使用して、case 「search」 への一致を、**PictureBot.cs** からトレースしてください。
->行き詰まってしまったときは? このラボのこの時点までのソリューションは、[resources/code/Finished](./code/Finished) にあります。このソリューション内の readme ファイルを開くと、ソリューションを実行するためにどのキーの追加が必要かがわかります。このコードは、ソリューションとして実行するのではなく、参照として使用することをお勧めしますが、実行する場合は、環境に必要なキーを必ず追加してください。
+    >ヒント: ブレーク ポイントを使用して、case 「search」 への一致を、**PictureBot.cs** からトレースしてください。
+    >行き詰まってしまったときは? このラボのこの時点までのソリューションは、[resources/code/Finished](./code/Finished) にあります。このソリューション内の readme ファイルを開くと、ソリューションを実行するためにどのキーの追加が必要かがわかります。このコードは、ソリューションとして実行するのではなく、参照として使用することをお勧めしますが、実行する場合は、環境に必要なキーを必ず追加してください。
 
 ## リソース
 

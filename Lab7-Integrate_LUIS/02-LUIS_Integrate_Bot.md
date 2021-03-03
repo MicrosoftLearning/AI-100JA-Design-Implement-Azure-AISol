@@ -6,7 +6,7 @@
 
 LUIS を使用するには、ボットを更新する必要があります。  「Startup.cs」 と 「PictureBot.cs」 を変更することで、これを行うことができます。
 
-> 前提条件: このラボは、[ラボ 3](../Lab3-Basic_Filter_Bot/02-Basic_Filter_Bot.md) に基づいて作成されます。このラボで説明するようにログを実装するには、このラボを実行することをお勧めします。そうでない場合、ニーズによっては、すべての演習を注意深く読み、コードの一部を調るか、独自のアプリケーションで使用するだけで十分です。
+> 前提条件: このラボは、[ラボ 3](../Lab3-Basic_Filter_Bot/02-Basic_Filter_Bot.md) に基づいて作成されます。このラボで説明するようにログを実装するには、このラボを実行することをお勧めします。そうでない場合、ニーズによっては、すべての演習を注意深く読み、コードの一部を確認するか、独自のアプリケーションで使用するだけで十分です。
 
 > 注意: Finished フォルダーのコードを使用する場合は、アプリ固有の情報を独自のアプリ ID とエンドポイントに置き換える必要があります。
 
@@ -21,44 +21,30 @@ LUIS を使用するには、ボットを更新する必要があります。  �
 
 1. 「**Startup.cs**」 を開き、`ConfigureServices`メソッドを見つけます。ここで、状態アクセサーを作成して登録した後、LUIS 用の追加サービスを追加して、LUIS を追加します。
 
-    以下の下の行に、
-
-    ```csharp
-    services.AddSingleton((Func<IServiceProvider, PictureBotAccessors>)(sp =>
-    {
-        .
-        .
-        .
-        return accessors;
-    });
-    ```
-
     下記のように追加します。
 
     ```csharp
-    // LUIS 認識エンジンを作成して登録します。
+    // Create and register a LUIS recognizer.
     services.AddSingleton(sp =>
     {
-        var luisAppId = Configuration.GetSection("luisAppId")?.Value;
-        var luisAppKey = Configuration.GetSection("luisAppKey")?.Value;
-        var luisEndPoint = Configuration.GetSection("luisEndPoint")?.Value;
-
-        // LUIS 情報を取得します
-        var luisApp = new LuisApplication(luisAppId, luisAppKey, luisEndPoint);
-
-        // LUIS オプションを指定します。これらはボットによって異なる場合があります。
-        var luisPredictionOptions = new LuisPredictionOptions
-        {
-            IncludeAllIntents = true,
-        };
-
-        // 認識エンジンを作成します
-        var recognizer = new LuisRecognizer(luisApp, luisPredictionOptions, true, null);
-        return recognizer;
+        var luisApplication = new LuisApplication(
+            Configuration.GetSection("luisAppId")?.Value,
+            Configuration.GetSection("luisAppKey")?.Value,
+            Configuration.GetSection("luisEndPoint")?.Value);
+            // Set the recognizer options depending on which endpoint version you want to use.
+            // More details can be found in https://docs.microsoft.com/en-gb/azure/cognitive-services/luis/luis-migration-api-v3
+            var recognizerOptions = new LuisRecognizerOptionsV3(luisApplication)
+            {
+                PredictionOptions = new Microsoft.Bot.Builder.AI.LuisV3.LuisPredictionOptions
+                {
+                    IncludeAllIntents = true,
+                }
+            };
+        return new LuisRecognizer(recognizerOptions);
     });
     ```
 
-1. **appsettings.json** を変更して次のプロパティを含めます。 
+1. **appsettings.json** を変更して、次のプロパティを含めます。 
 
     ```json
     "luisAppId": "",
@@ -68,28 +54,44 @@ LUIS を使用するには、ボットを更新する必要があります。  �
 
 1. LUISのサイトからアプリ ID、 予測リソースのキー、 エンドポイントURLを取得し、appsettings.jsonに入力します。
 
-    > **注**: .NET SDK の Luis エンドポイント URL は、 **https://{region}.api.cognitive.microsoft.com**のようなもので、その後に API やバージョンはありません。
+    > **注**: .NET SDK の Luis エンドポイント URL は、 **https://{region}.api.cognitive.microsoft.com**のようなもので、その後ろに API やバージョンは必要ありません。
 
 ## ラボ 7.2: LUIS の PictureBot の MainDialog への追加
 
-1. **PictureBot.cs** を開きます。最初に行う必要があるのは、`PictureBotAccessors`で行ったのと同様に、LUIS 認識エンジンを初期化することです。コメント行`// LUIS 認識エンジンを初期化する(Initialize LUIS Recognizer)`の下に、次の操作を追加します。
+1. **PictureBot.cs** を開きます。最初に行う必要があるのは、`PictureBotAccessors`で行ったのと同様に、LUIS 認識エンジンを初期化することです。`private readonly PictureBotAccessors _accessors;`の下に、次のコードを追加します。
 
     ```csharp
     private LuisRecognizer _recognizer { get; } = null;
     ```
 
+1. PictureBotファイルに、次の名前空間を追加します。
+
+    ```csharp
+    using Microsoft.Bot.Builder.AI.Luis;
+    ```
+
 1. **PictureBot** コンストラクターに移動します。
 
     ```csharp
-    public PictureBot(PictureBotAccessors accessors, ILoggerFactory loggerFactory /*, LuisRecognizer recognizer*/)
+    public PictureBot(PictureBotAccessors accessors)
     ```
 
-    これまで LUIS を呼び出していなかったので、LUIS 認識エンジンで PictureBot に入力する必要がなかったため、ここでコメント アウトしていました。ここで、認識エンジンを使用します。
+1. 次のように、入力要件（パラメーター `LuisRecognizer recognizer`）を追加します。
 
-1. 入力要件（パラメーター`LuisRecognizer recognizer`）のコメントを解除し、`// LUIS Recognizerのインスタンスを追加(Add instance of LUIS Recognizer)`の下に次の行を追加します。
+    ```csharp
+    public PictureBot(PictureBotAccessors accessors, LuisRecognizer recognizer)
+    ```
+
+1. コンストラクタの先頭に以下のコードを追加します。
 
     ```csharp
     _recognizer = recognizer ?? throw new ArgumentNullException(nameof(recognizer));
+    ```
+
+1. 以下のusing句を追加します。
+
+    ```csharp
+    using System;
     ```
 
     繰り返しますが、これは`_accessors`のインスタンスを初期化した方法と非常によく似ています。
@@ -113,20 +115,20 @@ LUIS を使用するには、ボットを更新する必要があります。  �
     ```csharp
     default:
     {
-        // LUIS 認識エンジンを呼び出する
+        // Call LUIS recognizer
         var result = await _recognizer.RecognizeAsync(stepContext.Context, cancellationToken);
-        // 結果から一番上の意図を取得する
+        // Get the top intent from the results
         var topIntent = result?.GetTopScoringIntent();
-        // 意図に基づいて、上記の正規表現と似た概念の会話を切り替えます
+        // Based on the intent, switch the conversation, similar concept as with Regex above
         switch ((topIntent != null) ? topIntent.Value.intent : null)
         {
             case null:
-                // 結果がない場合は、アプリ ロジックを追加します。
+                // Add app logic when there is no result.
                 await MainResponses.ReplyWithConfused(stepContext.Context);
                 break;
             case "None":
                 await MainResponses.ReplyWithConfused(stepContext.Context);
-                // 各ステートメントで、単にテストを目的として LuisScore を追加し、LUIS が呼び出されたかどうかを確認します。
+                // with each statement, we're adding the LuisScore, purely to test, so we know whether LUIS was called or not
                 await MainResponses.ReplyWithLuisScore(stepContext.Context, topIntent.Value.intent, topIntent.Value.score);
                 break;
             case "Greeting":
@@ -154,7 +156,14 @@ LUIS を使用するには、ボットを更新する必要があります。  �
     }
     ```
 
-    新しいコードの追加で行うことを簡単に説明します。まず、理解できないと答える代わりに、LUIS を呼び出します。そのため、LUIS 認識エンジンを使用して LUIS を呼び出し、一番上の意図を変数に格納します。次に、`switch`を使用して、ピックアップされた意図に応じて、さまざまな方法で応答します。これは、正規表現で行ったこととほぼ同じです。
+1. `MainMenuAsync` メソッド内で、混乱を避けるために空のダイアログのブロックを削除しましょう。次のコードを見つけて削除します。
+    ```csharp
+    case "search":
+        // switch to the search dialog
+        return await stepContext.BeginDialogAsync("searchDialog", null, cancellationToken);
+    ```
+
+    新しいコードの追加で行っていることを簡単に説明します。まず、we don't understand、と答える代わりに、LUIS を呼び出します。そのため、LUIS 認識エンジンを使用して LUIS を呼び出し、一番上の意図を変数に格納します。次に、`switch`を使用して、ピックアップされた意図に応じて、さまざまな方法で応答します。これは、正規表現で行ったこととほぼ同じです。
 
     > **注意**: LUIS で、意図に[ラボ 6](../Lab6-Implement_LUIS/02-Implement_LUIS.md) で指示したのとは異なる名前を付けた場合は、それに応じて`case`ステートメントを変更する必要があります。
 
@@ -166,7 +175,7 @@ LUIS を使用するには、ボットを更新する必要があります。  �
 
 1. Bot Emulator に切り替えます。さまざまな方法でイメージを検索してボットに送信してみてください。「send me pictures of water」 (水の写真を送って) や 「show me dog pics」 (犬の写真を見せて) と言うと、どうなりますか? 他の方法で写真を要求したり、共有したり、並べ替えたりしてみてください。
 
-1. 時間が余った場合は、LUIS で予期しないものがピックアップされているかどうかを確認します。おそらく、この時点が luis.ai に移動し、[エンドポイントの発話を確認](https://docs.microsoft.com/ja-jp/azure/cognitive-services/LUIS/label-suggested-utterances)し、モデルを再トレーニング/再公開する良いタイミングです。
+    時間が余った場合は、LUIS で予期しないものがピックアップされているかどうかを確認します。おそらく、この時点が luis.ai に移動し、[エンドポイントの発話を確認](https://docs.microsoft.com/ja-jp/azure/cognitive-services/LUIS/label-suggested-utterances)し、モデルを再トレーニング/再公開する良いタイミングです。
 
     > **楽しい余談**: エンドポイントの発話を確認することは非常に有益です。  LUIS は、どの発話を表面化するかについてスマートに決定します。  人間参加型 (human-in-the-loop) で手動でラベル付けすると、改善するために最大限に役立つものを選びます。  たとえば、LUIS モデルで、特定の発話が 47% の信頼度で Intent1 にマッピングされ、48% の信頼度で Intent2 にマッピングされると予測された場合、このモデルが 2 つの意図の間に非常に近いため、手動でマッピングする人間に対して表面化する有力な候補になります。
 

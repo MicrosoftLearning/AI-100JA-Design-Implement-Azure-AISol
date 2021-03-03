@@ -68,7 +68,7 @@ namespace TestCLI
                 dynamic settings = new JsonSerializer().Deserialize(textReader);
 
                 VisionServiceHelper.Url = settings.CognitiveServicesKeys.Url;
-                VisionServiceHelper.ApiKey = settings.CognitiveServicesKeys.Vision;
+                VisionServiceHelper.ApiKey = settings.CognitiveServicesKeys.Key;
 
                 BlobStorageHelper.ConnectionString = settings.AzureStorage.ConnectionString;
                 BlobStorageHelper.ContainerName = settings.AzureStorage.BlobContainer;
@@ -108,10 +108,10 @@ namespace TestCLI
                         Console.WriteLine($"Processing {file}");
                         // Resize (if needed) in order to reduce network latency and errors due to large files. Then store the result in a temporary file.
                         var resized = Util.ResizeIfRequired(file, 750);
-                        Func<Task<Stream>> imageCB = async () => File.OpenRead(resized.Item2);
-                        ImageInsights insights = await ImageProcessor.ProcessImageAsync(imageCB, fileName);
+                        //Func<Task<Stream>> imageCB = async () => File.OpenRead(resized.Item2);
+                        ImageInsights insights = await ImageProcessor.ProcessImageAsync(resized.Item2, fileName);
                         Console.WriteLine($"Insights: {JsonConvert.SerializeObject(insights, Formatting.None)}");
-                        var imageBlob = await blobStorage.UploadImageAsync(imageCB, fileName);
+                        var imageBlob = await blobStorage.UploadImageAsync(resized.Item2, fileName);
                         var metadata = new ImageMetadata(file);
                         metadata.AddInsights(insights);
                         metadata.BlobUri = imageBlob.Uri;

@@ -48,10 +48,10 @@ namespace ImageStorageLibrary
         /// <param name="imageStreamCallback">Functor that can produce a task which, when executed, provides the image stream.</param>
         /// <param name="imageId">Blob file name.</param>
         /// <returns></returns>
-        public async Task<CloudBlockBlob> UploadImageAsync(Func<Task<Stream>> imageStreamCallback, string imageId)
+        public async Task<CloudBlockBlob> UploadImageAsync(string imgPath, string imageId)
         {
             CloudBlockBlob blob = container.GetBlockBlobReference(imageId);
-            await blob.UploadFromStreamAsync(await imageStreamCallback());
+            await blob.UploadFromFileAsync(imgPath);
             return blob;
         }
 

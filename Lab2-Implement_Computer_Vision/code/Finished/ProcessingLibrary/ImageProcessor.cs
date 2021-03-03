@@ -16,13 +16,13 @@ namespace ProcessingLibrary
     public class ImageProcessor
     {
         // Step 2: Create the ProcessImageAsync method:
-        public static async Task<ImageInsights> ProcessImageAsync(Func<Task<Stream>> imageStreamCallback, string imageId)
+        public static async Task<ImageInsights> ProcessImageAsync(string imgPath, string imageId)
         {
             // Step 3: Set up an array that we'll fill in over the course of the processor:
             VisualFeature[] DefaultVisualFeaturesList = new VisualFeature[] { VisualFeature.Tags, VisualFeature.Description };
 
             // Step 4: Call the Computer Vision service and store the results in imageAnalysisResult:
-            var imageAnalysisResult = await VisionServiceHelper.AnalyzeImageAsync(imageStreamCallback, DefaultVisualFeaturesList);
+            var imageAnalysisResult = await VisionServiceHelper.AnalyzeImageAsync(imgPath, DefaultVisualFeaturesList);
 
             // Step 5: Create an entry in ImageInsights:
             ImageInsights result = new ImageInsights

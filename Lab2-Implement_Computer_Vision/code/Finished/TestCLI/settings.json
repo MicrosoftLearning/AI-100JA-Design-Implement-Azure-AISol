@@ -1,7 +1,7 @@
 {
   "CognitiveServicesKeys": {
     "Url": "https://YOURLOCATION.api.cognitive.microsoft.com/vision/v1.0",
-    "Vision": "your service key"
+    "Key": "your service key"
   },
   "AzureStorage": {
     "ConnectionString": "DefaultEndpointsProtocol=https;AccountName=XXXXX;AccountKey=XXXXX;EndpointSuffix=core.windows.net",
