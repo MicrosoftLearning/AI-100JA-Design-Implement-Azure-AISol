@@ -54,6 +54,7 @@ LUIS を使用するには、ボットを更新する必要があります。  �
 
 1. LUISのサイトからアプリ ID、 予測リソースのキー、 エンドポイントURLを取得し、appsettings.jsonに入力します。
 
+    > **注**: App ID は、LUIS ポータル https://www.luis.ai の MANAGE 画面に書かれています。
     > **注**: .NET SDK の Luis エンドポイント URL は、 **https://{region}.api.cognitive.microsoft.com**のようなもので、その後ろに API やバージョンは必要ありません。
 
 ## ラボ 7.2: LUIS の PictureBot の MainDialog への追加
@@ -98,7 +99,7 @@ LUIS を使用するには、ボットを更新する必要があります。  �
 
     `MainDialog`を更新する限り、ユーザーの入力に関係なく、会話の開始時にユーザーが挨拶されるので、最初の`GreetingAsync`の手順で何かを追加する必要はありません。
 
-1. `MainMenuAsync`では、正規表現を試してみることから始めるため、そのほとんどは残しておきます。ただし、正規表現で意図を見つけられない場合は、`default`アクションを変更します。次に、LUIS を呼び出します。
+1. **PictureBot.cs** ファイルの `MainMenuAsync`では、正規表現を試してみることから始めるため、そのほとんどは残しておきます。ただし、正規表現で意図を見つけられない場合は、`default`アクションを変更します。次に、LUIS を呼び出します。
 
     `MainMenuAsync`スイッチ ブロック内で、以下を置き換えます。
 

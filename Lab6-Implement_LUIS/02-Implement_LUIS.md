@@ -38,8 +38,6 @@ LUIS ではラボで使用できる "スターター キー" が提供される�
 
 1. 検索ボックスに**language**と入力して、 **Language Understanding**を選びます
 
-1. 「**作成**」を選択します
-
 1. 作成オプションで、**両方**を選択します。
     
     > AuthoringリソースとPredictionリソースの両方が作成されます。
@@ -62,27 +60,29 @@ LUIS ではラボで使用できる "スターター キー" が提供される�
 
 LUIS を使用して、自然言語機能を追加する方法を見てみましょう。LUIS を使用すると、自然言語の発話 (ボットと話すときにユーザーが話す単語/フレーズ/文) を意図 (ユーザーが実行するタスクやアクション) にマッピングできます。ここでは、写真の検索、写真の共有、写真のプリントの順序付けなど、いくつかの意図があります。これらの事柄を尋ねる方法として、発話のいくつかの例をご紹介します。LUIS では、学習した内容に基づいて、それぞれの意図に追加の新しい発話がマッピングされます。
 
-> **警告**: Azure サービスでは IE を既定のブラウザーとして使用しますが、LUIS にはお勧めしません。すべてのラボで Chrome または Firefox を使用できるはずです。あるいは、[Microsoft Edge](https://www.microsoft.com/ja-jp/download/details.aspx?id=48126) または [Google Chrome](https://www.google.com/intl/en/chrome/) のいずれかをダウンロードすることもできます.
-
 1. [https://www.luis.ai](https://www.luis.ai)に移動します （**ヨーロッパまたはオーストラリアにいない場合**）。ボットをサポートする新しい LUIS アプリを作成します。
 
     > **注**:**ヨーロッパ** リージョンでキーを作成した場合は、[https://eu.luis.ai/](https://eu.luis.ai/) でアプリケーションを作成する必要があります。**オーストラリア** リージョンでキーを作成した場合は、[https://au.luis.ai/](https://au.luis.ai/) でアプリケーションを作成する必要があります。LUIS を公開しているリージョンの詳細については、[ここ](https://docs.microsoft.com/ja-jp/azure/cognitive-services/luis/luis-reference-regions)を参照してください。
 
-1. Sign inをクリックし、組織のアカウントまたは Microsoft アカウントを使用してサインインします。(これは、前のセクションで LUIS キーを作成したのと同じアカウントにする必要があります)。
+1. **Login** をクリックし、組織のアカウントまたは Microsoft アカウントを使用してサインインします。(これは、前のセクションで LUIS を作成したのと同じアカウントにする必要があります)。
 
-1. 作成したLUISのAuthoringリソースを選択します。
+1. **Choose an authoring resource** 画面で、先ほど作成した LUIS の Authoring リソースを選択し、**Done** をクリックします。
 
-1. メイン ページで、「**+ New App**」ボタンをクリックします
+1. **Conversation apps** ページで、「**+ New App**」ボタンをクリックします
 
     > **注意**: [現在のページ](https://www.luis.ai/applications)の「New App」 (新しいアプリ) ボタンの横に「Import as JSON」 (アプリのインポート) もあります。  LUIS アプリケーションを作成した後、アプリ全体を JSON としてエクスポートし、ソース管理にチェックインできます。  これは推奨されるベスト プラクティスであり、コードのバージョン管理に合わせて LUIS モデルのバージョンを管理できます。  エクスポートされた LUIS アプリは、「Import App」 (アプリのインポート) ボタンを使用して再インポートできます。  ラボの進行が遅れてしまい、ショートカットする場合は、「Import App」 (アプリのインポート) ボタンをクリックして [LUIS モデル](./code/LUIS/PictureBotLuisModel.json)をインポートできます。
 
 1. Nameを**PictureBotLuisModel**と入力します
 
-1. Cultureを**Japanese**にし、予測リソースを選択します
+1. Cultureを **Japanese** にします。
+ 
+1. **Prediction resource** を選択します
 
 1. 「**Done**」をクリックします。
 
-1. 上部のナビゲーションで、「**ビルド**」 リンクを選択します。  「None」 (なし) という意図が 1 つあることに注意してください。  いずれの意図にもマッピングされないランダムな発話は、"None" (なし) にマッピングされる場合があります。
+1. **How to create an effective LUIS app** が表示されたら閉じてください。
+
+1. 上部のナビゲーションで、「**BUILD**」 リンクを選択します。  「None」 (なし) というIntent（意図）が 1 つあることに注意してください。  いずれの意図にもマッピングされないランダムな発話は、"None" (なし) にマッピングされる場合があります。
 
     ![LUIS ダッシュボード](../images//LuisCreateIntent.png)
 
@@ -95,11 +95,11 @@ LUIS を使用して、自然言語機能を追加する方法を見てみまし
 
     これらのそれぞれを要求するユーザーの意図を作成してみましょう。  
 
-1. 新しい意図の「**作成**」ボタンをクリックします。
+1. Intents 画面で、「**Create**」ボタンをクリックします。
 
-1. 最初の意図に「**Greeting**」という名前を付け、「**Done**」をクリックします。  
+1. Intent name に「**Greeting**」という名前を付け、「**Done**」をクリックします。  
 
-1. ボットに挨拶するときにユーザーが話す可能性のある言葉の例をいくつか示し、それぞれの後に Enter キーを押します。
+1. ボットに挨拶するときにユーザーが話す可能性のある言葉の例を日本語でいくつ入力し、それぞれの後に Enter キーを押します。
 
     ![LUIS Greeting の意図](../images//LuisGreetingIntent.png)
 
@@ -183,7 +183,10 @@ LUIS を使用して、自然言語機能を追加する方法を見てみまし
 
 1. 「**Azure Resources**」を選択します。この画面は、LUIS サービスへのアクセスに使用される URL エンドポイントを管理するために使用されます。
 
-1. 「**Prediction Resources**」と「**Key**」が既に作成されていることがわかります。  **Prediction Resources**が表示されている場合は、次の「**アプリを公開する**」セクションに進みます。
+1. 「**Prediction Resources**」タブに「**Primary Key**」が既に作成されていることがわかります。  
+
+  **Prediction Resources**が表示されている場合は、次の「**アプリを公開する**」セクションに進みます。
+  
     1. 既存の**Prediction Resources**が表示されない場合は、「**Add Prediction resource**」を選択します。「**Azure directory**」は既に選択されています。
     1. サブスクリプションと、先に Azure Portal で作成したリソースを選択し、「**Done**」を選択してから Language Understanding リソースを LUIS サービスに接続します。
 
